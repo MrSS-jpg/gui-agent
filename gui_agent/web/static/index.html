@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>antiX Linux X11 Autonomous GUI Operator</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">AG</div>
+      <div>
+        <div class="brand-title">antiX Autonomous GUI Operator</div>
+        <div class="brand-subtitle">
+          <span id="monitor-badge">Secondary: VGA-1 (1920x1080) [LOCKED]</span>
+        </div>
+      </div>
+    </div>
+    <div class="btn-group">
+      <div id="agent-status-badge" class="status-badge stopped">
+        <span class="dot"></span>
+        <span id="status-text">IDLE / READY</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard -->
+  <main class="dashboard-container">
+
+    <!-- Left Column: Mission Control & Terminal Output -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- Mission Prompt Card -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Mission Control & Objective
+          </h2>
+          <span style="font-size: 11px; color: var(--text-dim);">Strictly isolated to Monitor 2</span>
+        </div>
+
+        <div class="form-group">
+          <label for="mission-prompt">Testing Objective / Human Request</label>
+          <textarea id="mission-prompt" placeholder="e.g. Open Firefox, navigate to google.com, search antiX Linux, verify results"></textarea>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <label class="checkbox-label">
+            <input type="checkbox" id="use-architect" checked>
+            <span><strong>Auto-Refine with Prompt Architect</strong> (Cerebras / Mistral translation engine)</span>
+          </label>
+          <button id="btn-preview-architect" class="btn btn-secondary btn-sm" type="button">Preview Refinement</button>
+        </div>
+
+        <!-- Refined prompt preview accordion (hidden by default) -->
+        <div id="architect-preview-box" style="display: none; background: #0c121e; border: 1px solid #1f293d; border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: #94a3b8; white-space: pre-wrap; max-height: 180px; overflow-y: auto;"></div>
+
+        <!-- Provider & Tuning Controls -->
+        <div class="control-row">
+          <div class="form-group">
+            <label for="provider-select">Primary Provider</label>
+            <select id="provider-select">
+              <option value="auto" selected>Auto (Quota Fallback)</option>
+              <option value="agnes">Agnes AI</option>
+              <option value="groq">Groq Vision</option>
+              <option value="bytez">Bytez Multimodal</option>
+              <option value="nvidia">NVIDIA NIM</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="openrouter">OpenRouter</option>
+            </select>
+          </div>
+
+          <div class="form-group slider-group">
+            <div class="slider-header">
+              <label for="delay-slider">Step Delay</label>
+              <span id="delay-val">0.5s</span>
+            </div>
+            <input type="range" id="delay-slider" min="0.2" max="5.0" step="0.1" value="0.5">
+          </div>
+
+          <div class="form-group slider-group">
+            <div class="slider-header">
+              <label for="steps-slider">Max Steps</label>
+              <span id="steps-val">25</span>
+            </div>
+            <input type="range" id="steps-slider" min="1" max="50" step="1" value="25">
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-group" style="margin-top: 4px;">
+          <button id="btn-run" class="btn btn-primary" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Launch Mission
+          </button>
+          <button id="btn-stop" class="btn btn-danger" type="button" disabled>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"></rect></svg>
+            Abort / Stop Agent
+          </button>
+        </div>
+      </section>
+
+      <!-- Terminal Live Logs Card -->
+      <section class="card" style="flex: 1;">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+            Live Terminal Stream (SSE)
+          </h2>
+          <button id="btn-clear-terminal" class="btn btn-secondary btn-sm" type="button">Clear Console</button>
+        </div>
+
+        <div class="terminal-wrapper">
+          <div class="terminal-header">
+            <span>stdout / stderr streaming output</span>
+            <span id="terminal-lines-count">0 lines</span>
+          </div>
+          <div id="terminal-output" class="terminal-body">Ready. Enter a mission prompt above and click Launch Mission.</div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Right Column: Screen Preview & API Key Center -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- Monitor 2 Screenshot Preview -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            Live Monitor 2 Preview
+          </h2>
+          <button id="btn-refresh-screen" class="btn btn-secondary btn-sm" type="button">Capture Now</button>
+        </div>
+
+        <div class="screenshot-box">
+          <img id="screenshot-img" src="/api/screenshot" alt="Monitor 2 Frame Preview">
+        </div>
+      </section>
+
+      <!-- API Key & Provider Management Center -->
+      <section class="card" style="flex: 1;">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-1-1l-3 3m2 2l-3 3m-2-2l-3 3m2 2l-3 3m-2-2l-3 3M3 21l3-3m0 0l3 3m-3-3l3-3"></path></svg>
+            API Key & Provider Center
+          </h2>
+          <button id="btn-save-keys" class="btn btn-primary btn-sm" type="button">Save Changes</button>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-dim);">
+          Manage multi-key arrays for dynamic quota rotation. Saved directly to <code>~/.local/share/gui-agent/config.json</code>.
+        </div>
+
+        <div id="keys-container" class="key-accordion">
+          <!-- Dynamically populated provider key sections -->
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast">Changes saved.</div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

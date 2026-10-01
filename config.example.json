@@ -1,0 +1,11 @@
+{
+  "agnes_keys": [],
+  "groq_keys": [],
+  "gemini_keys": [],
+  "bytez_keys": [],
+  "nvidia_keys": [],
+  "openrouter_keys": [],
+  "cerebras_keys": [],
+  "mistral_keys": [],
+  "_comment": "API keys can also be supplied via .env file or environment variables (e.g. AGNES_API_KEY, GROQ_API_KEY, GEMINI_API_KEY)"
+}
